@@ -1,0 +1,83 @@
+package ru.yandex.practicum.mymarket.controller;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
+import ru.yandex.practicum.mymarket.service.CartService;
+import ru.yandex.practicum.mymarket.service.ItemService;
+
+@Controller
+@RequestMapping("/cart")
+public class CartController {
+    private static final Logger log = LoggerFactory.getLogger(CartController.class);
+
+    private final CartService cartService;
+    private final ItemService itemService;
+
+    public CartController(CartService cartService, ItemService itemService) {
+        this.cartService = cartService;
+        this.itemService = itemService;
+    }
+
+    @GetMapping("/items")
+    public Mono<String> getCart(Model model) {
+        log.info("GET /cart/items - Displaying cart");
+        return cartService.getCartItems(itemService)
+                .collectList()
+                .doOnNext(items -> log.debug("Cart has {} items", items.size()))
+                .zipWith(cartService.getTotalSum(itemService))
+                .doOnNext(tuple -> {
+                    log.info("Cart total: {} rub, items count: {}", tuple.getT2(), tuple.getT1().size());
+                    model.addAttribute("items", tuple.getT1());
+                    model.addAttribute("total", tuple.getT2());
+                })
+                .thenReturn("cart");
+    }
+
+    @PostMapping("/items")
+    public Mono<String> updateCart(
+            @RequestParam Long id,
+            @RequestParam String action,
+            Model model) {
+        log.info("POST /cart/items - id: {}, action: {}", id, action);
+        Mono<?> cartAction;
+        switch (action) {
+            case "PLUS":
+                log.debug("Increasing item {} in cart", id);
+                cartAction = cartService.increaseItem(id);
+                break;
+            case "MINUS":
+                log.debug("Decreasing item {} in cart", id);
+                cartAction = cartService.decreaseItem(id);
+                break;
+            case "DELETE":
+                log.debug("Removing item {} from cart", id);
+                cartAction = cartService.removeItem(id);
+                break;
+            default:
+                log.warn("Unknown action: {} for item {}", action, id);
+                cartAction = Mono.empty();
+        }
+
+        return cartAction
+                .doOnSuccess(v -> log.debug("Cart action completed for item {}", id))
+                .then(cartService.getCartItems(itemService).collectList())
+                .zipWith(cartService.getTotalSum(itemService))
+                .doOnNext(tuple -> {
+                    log.debug("Updated cart: {} items, total: {} rub", tuple.getT1().size(), tuple.getT2());
+                    model.addAttribute("items", tuple.getT1());
+                    model.addAttribute("total", tuple.getT2());
+                })
+                .thenReturn("cart");
+    }
+
+    @PostMapping("/clear")
+    public Mono<String> clearCart() {
+        log.info("POST /cart/clear - Clearing cart");
+        return cartService.clear()
+                .thenReturn("redirect:/cart/items");
+    }
+}
