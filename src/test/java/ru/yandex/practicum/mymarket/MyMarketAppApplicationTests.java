@@ -9,5 +9,4 @@ class MyMarketAppApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }
