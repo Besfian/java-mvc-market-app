@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyMarket - Мои заказы</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+        }
+
+        .back-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .back-link:hover {
+            background: #f0f0f0;
+        }
+
+        .orders-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .orders-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .orders-empty {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .orders-empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .shop-now-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .order-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: box-shadow 0.3s;
+        }
+
+        .order-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .order-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .order-id {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .order-date {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .order-total {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .order-toggle {
+            font-size: 24px;
+            transition: transform 0.3s;
+        }
+
+        .order-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: white;
+        }
+
+        .order-details.open {
+            max-height: 2000px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        .order-items {
+            padding: 20px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .items-table th,
+        .items-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .items-table th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .items-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .item-title {
+            font-weight: 500;
+        }
+
+        .item-price, .item-total {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .view-order-btn {
+            display: inline-block;
+            margin-top: 15px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .toast-notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .order-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .items-table {
+                font-size: 12px;
+            }
+            .items-table th,
+            .items-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <a href="/items" class="logo">🛒 MyMarket</a>
+        <div>
+            <a href="/cart/items" class="back-link">🛍️ Корзина</a>
+            <a href="/items" class="back-link">← В магазин</a>
+        </div>
+    </div>
+
+    <div class="orders-container">
+        <div class="orders-title">📋 Мои заказы</div>
+
+        <div th:if="${orders == null or orders.empty}" class="orders-empty">
+            <div class="orders-empty-icon">📦</div>
+            <h2>У вас пока нет заказов</h2>
+            <p>Сделайте первый заказ в нашем магазине!</p>
+            <a href="/items" class="shop-now-btn">Начать покупки</a>
+        </div>
+
+        <div th:unless="${orders == null or orders.empty}">
+            <div th:each="order : ${orders}" class="order-card">
+                <div class="order-header" th:onclick="|toggleOrder(${order.id})|">
+                    <div>
+                        <div class="order-id">Заказ #<span th:text="${order.id}">0000</span></div>
+                        <div class="order-date" th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2024 12:00</div>
+                    </div>
+                    <div class="order-total">
+                        <span th:text="${#numbers.formatInteger(order.totalSum, 0, 'COMMA')}">0</span> ₽
+                    </div>
+                    <div class="order-toggle" th:id="${'toggle_' + order.id}">▼</div>
+                </div>
+
+                <div class="order-details" th:id="${'details_' + order.id}">
+                    <div class="order-items">
+                        <table class="items-table">
+                            <thead>
+                            <tr>
+                                <th>Товар</th>
+                                <th>Цена</th>
+                                <th>Количество</th>
+                                <th>Сумма</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item : ${order.items}">
+                                <td class="item-title" th:text="${item.title}">Название товара</td>
+                                <td class="item-price">
+                                    <span th:text="${#numbers.formatInteger(item.price, 0, 'COMMA')}">0</span> ₽
+                                </td>
+                                <td th:text="${item.count}">1</td>
+                                <td class="item-total">
+                                    <span th:text="${#numbers.formatInteger(item.price * item.count, 0, 'COMMA')}">0</span> ₽
+                                </td>
+                            </tr>
+                            </tbody>
+                            <tfoot>
+                            <tr style="background: #f0f0f0;">
+                                <td colspan="3" style="text-align: right; font-weight: bold;">Итого:</td>
+                                <td style="font-weight: bold; color: #667eea;">
+                                    <span th:text="${#numbers.formatInteger(order.totalSum, 0, 'COMMA')}">0</span> ₽
+                                </td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                        <a th:href="@{/orders/{id}(id=${order.id})}" class="view-order-btn">Подробнее о заказе →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+        function toggleOrder(orderId) {
+            var details = document.getElementById('details_' + orderId);
+            var toggle = document.getElementById('toggle_' + orderId);
+
+            if (details.classList.contains('open')) {
+                details.classList.remove('open');
+                toggle.textContent = '▼';
+            } else {
+                details.classList.add('open');
+                toggle.textContent = '▲';
+            }
+        }
+
+        window.onload = function() {
+            var urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('newOrder') === 'true') {
+                showToast('✅ Заказ успешно оформлен! Спасибо за покупку!');
+                var newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        }
+
+        function showToast(message) {
+            var toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(function() {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
