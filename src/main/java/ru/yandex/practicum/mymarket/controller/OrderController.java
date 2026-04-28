@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.mymarket.service.CartService;
 import ru.yandex.practicum.mymarket.service.ItemService;
@@ -49,9 +50,9 @@ public class OrderController {
     }
 
     @PostMapping("/buy")
-    public Mono<String> buy() {
-        log.info("POST /buy - Processing purchase");
-        return cartService.getCartItems(itemService)
+    public Mono<String> buy(WebSession session) {
+        log.info("POST /buy - Processing purchase for session: {}", session.getId());
+        return cartService.getCartItems(itemService, session)
                 .collectList()
                 .doOnNext(cartItems -> log.info("Cart has {} items for purchase", cartItems.size()))
                 .filter(cartItems -> {
@@ -63,7 +64,7 @@ public class OrderController {
                 })
                 .flatMap(orderService::createOrder)
                 .doOnNext(order -> log.info("Order created successfully: {}", order.getId()))
-                .flatMap(order -> cartService.clear()
+                .flatMap(order -> cartService.clear(session)
                         .doOnSuccess(v -> log.info("Cart cleared after order {}", order.getId()))
                         .thenReturn(order))
                 .map(order -> {

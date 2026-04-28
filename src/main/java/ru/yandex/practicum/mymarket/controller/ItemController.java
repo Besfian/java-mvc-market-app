@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.mymarket.dto.PagingDto;
@@ -33,16 +34,17 @@ public class ItemController {
             @RequestParam(defaultValue = "NO") String sort,
             @RequestParam(defaultValue = "1") int pageNumber,
             @RequestParam(defaultValue = "5") int pageSize,
-            Model model) {
-        log.info("GET /items - search: {}, sort: {}, pageNumber: {}, pageSize: {}",
-                search, sort, pageNumber, pageSize);
+            Model model,
+            WebSession session) {
+        log.info("GET /items - search: {}, sort: {}, pageNumber: {}, pageSize: {}, session: {}",
+                search, sort, pageNumber, pageSize, session.getId());
         return itemService.getItems(search, sort, pageNumber - 1, pageSize)
                 .doOnNext(itemsPage -> log.debug("Fetched {} items, total: {}",
                         itemsPage.getContent().size(), itemsPage.getTotalElements()))
                 .flatMap(itemsPage -> {
                     List<Item> itemsList = itemsPage.getContent();
                     return Flux.fromIterable(itemsList)
-                            .flatMap(item -> cartService.getItemCount(item.getId())
+                            .flatMap(item -> cartService.getItemCount(item.getId(), session)
                                     .doOnNext(count -> log.debug("Item {} has count: {}", item.getId(), count))
                                     .doOnNext(item::setCount)
                                     .thenReturn(item))
@@ -85,7 +87,8 @@ public class ItemController {
             @RequestParam(defaultValue = "NO") String sort,
             @RequestParam(defaultValue = "1") int pageNumber,
             @RequestParam(defaultValue = "5") int pageSize,
-            @RequestParam(required = false) String action) {
+            @RequestParam(required = false) String action,
+            WebSession session) {
         String redirectUrl = String.format(
                 "redirect:/items?search=%s&sort=%s&pageNumber=%d&pageSize=%d",
                 search != null ? search : "", sort, pageNumber, pageSize);
@@ -93,16 +96,16 @@ public class ItemController {
             log.warn("Missing required parameters - id: {}, action: {}", id, action);
             return Mono.just(redirectUrl);
         }
-        log.info("POST /items - id: {}, action: {}", id, action);
+        log.info("POST /items - id: {}, action: {}, session: {}", id, action, session.getId());
         Mono<?> cartAction;
         switch (action) {
             case "PLUS" -> {
                 log.debug("Increasing item {} in cart", id);
-                cartAction = cartService.increaseItem(id);
+                cartAction = cartService.increaseItem(id, session);
             }
             case "MINUS" -> {
                 log.debug("Decreasing item {} in cart", id);
-                cartAction = cartService.decreaseItem(id);
+                cartAction = cartService.decreaseItem(id, session);
             }
             default -> {
                 log.warn("Unknown action: {}", action);
@@ -113,15 +116,15 @@ public class ItemController {
     }
 
     @GetMapping("/items/{id}")
-    public Mono<String> getItem(@PathVariable Long id, Model model) {
-        log.info("GET /items/{}", id);
+    public Mono<String> getItem(@PathVariable Long id, Model model, WebSession session) {
+        log.info("GET /items/{} - session: {}", id, session.getId());
         return itemService.getItemById(id)
                 .doOnNext(item -> log.debug("Found item: {}", item.getTitle()))
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Item with id {} not found", id);
                     return Mono.empty();
                 }))
-                .flatMap(item -> cartService.getItemCount(id)
+                .flatMap(item -> cartService.getItemCount(id, session)
                         .doOnNext(count -> log.debug("Item {} has count: {}", id, count))
                         .doOnNext(item::setCount)
                         .thenReturn(item))
@@ -132,23 +135,24 @@ public class ItemController {
     @PostMapping("/items/{id}")
     public Mono<String> updateCartFromItem(
             @PathVariable Long id,
-            @RequestParam(name = "action") String action            ,
-            Model model) {
-        log.info("POST /items/{} - action: {}", id, action);
+            @RequestParam(name = "action") String action,
+            Model model,
+            WebSession session) {
+        log.info("POST /items/{} - action: {}, session: {}", id, action, session.getId());
         Mono<?> cartAction;
         switch (action) {
             case "PLUS":
-                cartAction = cartService.increaseItem(id);
+                cartAction = cartService.increaseItem(id, session);
                 break;
             case "MINUS":
-                cartAction = cartService.decreaseItem(id);
+                cartAction = cartService.decreaseItem(id, session);
                 break;
             default:
                 cartAction = Mono.empty();
         }
         return cartAction
                 .then(itemService.getItemById(id))
-                .flatMap(item -> cartService.getItemCount(id)
+                .flatMap(item -> cartService.getItemCount(id, session)
                         .doOnNext(item::setCount)
                         .thenReturn(item))
                 .doOnNext(item -> model.addAttribute("item", item))
