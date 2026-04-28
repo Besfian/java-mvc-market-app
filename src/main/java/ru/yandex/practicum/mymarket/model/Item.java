@@ -23,12 +23,4 @@ public class Item {
 
     @Transient
     private int count;
-
-    public Long getId() { return id; }
-    public Long id() { return id; }
-    public String title() { return title; }
-    public String description() { return description; }
-    public String imgPath() { return imgPath; }
-    public Long price() { return price; }
-    public int count() { return count; }
 }
