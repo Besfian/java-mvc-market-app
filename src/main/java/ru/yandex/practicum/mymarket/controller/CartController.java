@@ -7,8 +7,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
+import ru.yandex.practicum.mymarket.service.CartItemEnricher;
 import ru.yandex.practicum.mymarket.service.CartService;
-import ru.yandex.practicum.mymarket.service.ItemService;
 
 @Controller
 @RequestMapping("/cart")
@@ -16,20 +16,20 @@ public class CartController {
     private static final Logger log = LoggerFactory.getLogger(CartController.class);
 
     private final CartService cartService;
-    private final ItemService itemService;
+    private final CartItemEnricher cartItemEnricher;
 
-    public CartController(CartService cartService, ItemService itemService) {
+    public CartController(CartService cartService, CartItemEnricher cartItemEnricher) {
         this.cartService = cartService;
-        this.itemService = itemService;
+        this.cartItemEnricher = cartItemEnricher;
     }
 
     @GetMapping("/items")
     public Mono<String> getCart(Model model, WebSession session) {
         log.info("GET /cart/items - Displaying cart for session: {}", session.getId());
-        return cartService.getCartItems(itemService, session)
+        return cartItemEnricher.getCartItems(session)
                 .collectList()
                 .doOnNext(items -> log.debug("Cart has {} items", items.size()))
-                .zipWith(cartService.getTotalSum(itemService, session))
+                .zipWith(cartItemEnricher.getTotalSum(session))
                 .doOnNext(tuple -> {
                     log.info("Cart total: {} rub, items count: {}", tuple.getT2(), tuple.getT1().size());
                     model.addAttribute("items", tuple.getT1());
@@ -66,8 +66,8 @@ public class CartController {
 
         return cartAction
                 .doOnSuccess(v -> log.debug("Cart action completed for item {}", id))
-                .then(cartService.getCartItems(itemService, session).collectList())
-                .zipWith(cartService.getTotalSum(itemService, session))
+                .then(cartItemEnricher.getCartItems(session).collectList())
+                .zipWith(cartItemEnricher.getTotalSum(session))
                 .doOnNext(tuple -> {
                     log.debug("Updated cart: {} items, total: {} rub", tuple.getT1().size(), tuple.getT2());
                     model.addAttribute("items", tuple.getT1());

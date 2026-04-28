@@ -4,9 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.WebSession;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import ru.yandex.practicum.mymarket.model.Item;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,30 +74,5 @@ public class CartService {
         log.info("Clearing entire cart, had {} items in session {}", cart.size(), session.getId());
         cart.clear();
         return Mono.empty();
-    }
-
-    public Flux<Item> getCartItems(ItemService itemService, WebSession session) {
-        Map<Long, Integer> cart = getCartFromSession(session);
-        log.debug("Getting all cart items, cart size: {} in session {}", cart.size(), session.getId());
-        return Flux.fromIterable(cart.entrySet())
-                .doOnNext(entry -> log.debug("Processing cart entry: itemId={}, count={}", entry.getKey(), entry.getValue()))
-                .flatMap(entry -> itemService.getItemById(entry.getKey())
-                        .doOnNext(item -> log.debug("Found item: {}", item.getTitle()))
-                        .map(item -> {
-                            item.setCount(entry.getValue());
-                            return item;
-                        }));
-    }
-
-    public Mono<Long> getTotalSum(ItemService itemService, WebSession session) {
-        log.debug("Calculating total sum of cart in session {}", session.getId());
-        return getCartItems(itemService, session)
-                .map(item -> {
-                    long sum = item.getPrice() * item.getCount();
-                    log.debug("Item {}: {} * {} = {}", item.getTitle(), item.getPrice(), item.getCount(), sum);
-                    return sum;
-                })
-                .reduce(0L, Long::sum)
-                .doOnNext(total -> log.info("Cart total sum: {} in session {}", total, session.getId()));
     }
 }

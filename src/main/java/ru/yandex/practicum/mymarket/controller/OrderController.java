@@ -7,8 +7,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
+import ru.yandex.practicum.mymarket.service.CartItemEnricher;
 import ru.yandex.practicum.mymarket.service.CartService;
-import ru.yandex.practicum.mymarket.service.ItemService;
 import ru.yandex.practicum.mymarket.service.OrderService;
 
 @Controller
@@ -16,12 +16,12 @@ public class OrderController {
     private static final Logger log = LoggerFactory.getLogger(OrderController.class);
     private final OrderService orderService;
     private final CartService cartService;
-    private final ItemService itemService;
+    private final CartItemEnricher cartItemEnricher;
 
-    public OrderController(OrderService orderService, CartService cartService, ItemService itemService) {
+    public OrderController(OrderService orderService, CartService cartService, CartItemEnricher cartItemEnricher) {
         this.orderService = orderService;
         this.cartService = cartService;
-        this.itemService = itemService;
+        this.cartItemEnricher = cartItemEnricher;
     }
 
     @GetMapping("/orders")
@@ -52,7 +52,7 @@ public class OrderController {
     @PostMapping("/buy")
     public Mono<String> buy(WebSession session) {
         log.info("POST /buy - Processing purchase for session: {}", session.getId());
-        return cartService.getCartItems(itemService, session)
+        return cartItemEnricher.getCartItems(session)
                 .collectList()
                 .doOnNext(cartItems -> log.info("Cart has {} items for purchase", cartItems.size()))
                 .filter(cartItems -> {
