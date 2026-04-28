@@ -18,7 +18,7 @@
 ./mvnw dependency:purge-local-repository
 ./mvnw clean install -Dmaven.test.skip=true
 
-# Очистите проект
+# Очистить проект
 ./mvnw clean
 
 # Собрать  проект
@@ -32,6 +32,8 @@ java -jar target/my-market-app-1.0.0.jar
 
 # Запустить  приложение
 ./mvnw spring-boot:run
+
+./mvnw clean spring-boot:run
 
 
 # Собрать  образ

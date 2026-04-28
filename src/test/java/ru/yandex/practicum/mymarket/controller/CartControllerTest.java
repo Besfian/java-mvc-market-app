@@ -11,6 +11,8 @@ import ru.yandex.practicum.mymarket.model.Item;
 import ru.yandex.practicum.mymarket.service.CartService;
 import ru.yandex.practicum.mymarket.service.ItemService;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(CartController.class)
@@ -35,8 +37,8 @@ class CartControllerTest {
                 .price(1000L)
                 .build();
         item.setCount(2);
-        when(cartService.getCartItems(itemService)).thenReturn(Flux.just(item));
-        when(cartService.getTotalSum(itemService)).thenReturn(Mono.just(2000L));
+        when(cartService.getCartItems(eq(itemService), any())).thenReturn(Flux.just(item));
+        when(cartService.getTotalSum(eq(itemService), any())).thenReturn(Mono.just(2000L));
         webTestClient.get()
                 .uri("/cart/items")
                 .exchange()
@@ -51,9 +53,9 @@ class CartControllerTest {
                 .price(1000L)
                 .build();
         item.setCount(2);
-        when(cartService.increaseItem(1L)).thenReturn(Mono.empty());
-        when(cartService.getCartItems(itemService)).thenReturn(Flux.just(item));
-        when(cartService.getTotalSum(itemService)).thenReturn(Mono.just(2000L));
+        when(cartService.increaseItem(eq(1L), any())).thenReturn(Mono.empty());
+        when(cartService.getCartItems(eq(itemService), any())).thenReturn(Flux.just(item));
+        when(cartService.getTotalSum(eq(itemService), any())).thenReturn(Mono.just(2000L));
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/cart/items")
@@ -72,9 +74,9 @@ class CartControllerTest {
                 .price(1000L)
                 .build();
         item.setCount(1);
-        when(cartService.decreaseItem(1L)).thenReturn(Mono.empty());
-        when(cartService.getCartItems(itemService)).thenReturn(Flux.just(item));
-        when(cartService.getTotalSum(itemService)).thenReturn(Mono.just(1000L));
+        when(cartService.decreaseItem(eq(1L), any())).thenReturn(Mono.empty());
+        when(cartService.getCartItems(eq(itemService), any())).thenReturn(Flux.just(item));
+        when(cartService.getTotalSum(eq(itemService), any())).thenReturn(Mono.just(1000L));
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/cart/items")
@@ -87,9 +89,9 @@ class CartControllerTest {
 
     @Test
     void testUpdateCartWithDeleteActionShouldRemoveItem() {
-        when(cartService.removeItem(1L)).thenReturn(Mono.empty());
-        when(cartService.getCartItems(itemService)).thenReturn(Flux.empty());
-        when(cartService.getTotalSum(itemService)).thenReturn(Mono.just(0L));
+        when(cartService.removeItem(eq(1L), any())).thenReturn(Mono.empty());
+        when(cartService.getCartItems(eq(itemService), any())).thenReturn(Flux.empty());
+        when(cartService.getTotalSum(eq(itemService), any())).thenReturn(Mono.just(0L));
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/cart/items")

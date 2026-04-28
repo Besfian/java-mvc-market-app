@@ -40,7 +40,7 @@ class ItemControllerTest {
                 .build();
         PageImpl<Item> page = new PageImpl<>(List.of(item), PageRequest.of(0, 5), 1);
         when(itemService.getItems(null, "NO", 0, 5)).thenReturn(Mono.just(page));
-        when(cartService.getItemCount(1L)).thenReturn(Mono.just(0));
+        when(cartService.getItemCount(eq(1L), any())).thenReturn(Mono.just(0));
         webTestClient.get()
                 .uri("/items")
                 .exchange()
@@ -71,7 +71,7 @@ class ItemControllerTest {
                 .price(1000L)
                 .build();
         when(itemService.getItemById(1L)).thenReturn(Mono.just(item));
-        when(cartService.getItemCount(1L)).thenReturn(Mono.just(2));
+        when(cartService.getItemCount(eq(1L), any())).thenReturn(Mono.just(2));
         webTestClient.get()
                 .uri("/items/1")
                 .exchange()
@@ -80,7 +80,7 @@ class ItemControllerTest {
 
     @Test
     void testUpdateCartFromItemsShouldRedirect() {
-        when(cartService.increaseItem(1L)).thenReturn(Mono.empty());
+        when(cartService.increaseItem(eq(1L), any())).thenReturn(Mono.empty());
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/items")
@@ -106,8 +106,8 @@ class ItemControllerTest {
                 .price(1000L)
                 .build();
         when(itemService.getItemById(1L)).thenReturn(Mono.just(item));
-        when(cartService.getItemCount(1L)).thenReturn(Mono.just(1));
-        when(cartService.increaseItem(1L)).thenReturn(Mono.empty());
+        when(cartService.getItemCount(eq(1L), any())).thenReturn(Mono.just(1));
+        when(cartService.increaseItem(eq(1L), any())).thenReturn(Mono.empty());
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/items/1")

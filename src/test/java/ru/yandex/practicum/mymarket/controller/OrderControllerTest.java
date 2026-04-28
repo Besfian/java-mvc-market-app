@@ -16,6 +16,7 @@ import ru.yandex.practicum.mymarket.service.OrderService;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 
@@ -90,9 +91,9 @@ class OrderControllerTest {
         item.setCount(2);
         Order order = new Order();
         order.setId(1L);
-        when(cartService.getCartItems(itemService)).thenReturn(Flux.just(item));
+        when(cartService.getCartItems(any(), any())).thenReturn(Flux.just(item));
         when(orderService.createOrder(anyList())).thenReturn(Mono.just(order));
-        when(cartService.clear()).thenReturn(Mono.empty());
+        when(cartService.clear(any())).thenReturn(Mono.empty());
         webTestClient.post()
                 .uri("/buy")
                 .exchange()
@@ -102,7 +103,7 @@ class OrderControllerTest {
 
     @Test
     void testBuyEmptyCartShouldRedirectToCart() {
-        when(cartService.getCartItems(itemService)).thenReturn(Flux.empty());
+        when(cartService.getCartItems(any(), any())).thenReturn(Flux.empty());
         webTestClient.post()
                 .uri("/buy")
                 .exchange()
