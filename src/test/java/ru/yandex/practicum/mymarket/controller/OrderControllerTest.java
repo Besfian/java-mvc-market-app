@@ -10,8 +10,8 @@ import reactor.core.publisher.Mono;
 import ru.yandex.practicum.mymarket.model.Item;
 import ru.yandex.practicum.mymarket.model.Order;
 import ru.yandex.practicum.mymarket.model.OrderItem;
+import ru.yandex.practicum.mymarket.service.CartItemEnricher;
 import ru.yandex.practicum.mymarket.service.CartService;
-import ru.yandex.practicum.mymarket.service.ItemService;
 import ru.yandex.practicum.mymarket.service.OrderService;
 
 import java.util.List;
@@ -33,7 +33,7 @@ class OrderControllerTest {
     private CartService cartService;
 
     @MockBean
-    private ItemService itemService;
+    private CartItemEnricher cartItemEnricher;
 
     @Test
     void testGetOrdersShouldReturnOrdersPage() {
@@ -91,7 +91,7 @@ class OrderControllerTest {
         item.setCount(2);
         Order order = new Order();
         order.setId(1L);
-        when(cartService.getCartItems(any(), any())).thenReturn(Flux.just(item));
+        when(cartItemEnricher.getCartItems(any())).thenReturn(Flux.just(item));
         when(orderService.createOrder(anyList())).thenReturn(Mono.just(order));
         when(cartService.clear(any())).thenReturn(Mono.empty());
         webTestClient.post()
@@ -103,7 +103,7 @@ class OrderControllerTest {
 
     @Test
     void testBuyEmptyCartShouldRedirectToCart() {
-        when(cartService.getCartItems(any(), any())).thenReturn(Flux.empty());
+        when(cartItemEnricher.getCartItems(any())).thenReturn(Flux.empty());
         webTestClient.post()
                 .uri("/buy")
                 .exchange()

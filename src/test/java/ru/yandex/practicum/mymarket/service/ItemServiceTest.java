@@ -49,11 +49,9 @@ class ItemServiceTest {
         Item item1 = createTestItem(1L, "Apple", 2000L);
         Item item2 = createTestItem(2L, "Banana", 1000L);
         List<Item> items = List.of(item1, item2);
-
         when(itemRepository.findAllWithSort(eq("PRICE"), eq(10), eq(0L)))
                 .thenReturn(Flux.fromIterable(items));
         when(itemRepository.count()).thenReturn(Mono.just(2L));
-
         StepVerifier.create(itemService.getItems(null, "PRICE", 0, 10))
                 .expectNextMatches(page -> {
                     Page<Item> result = page;
@@ -72,14 +70,11 @@ class ItemServiceTest {
         int page = 1;
         int size = 5;
         long offset = page * size;
-
         Item item = createTestItem(1L, "Test Item", 1000L);
         List<Item> items = List.of(item);
-
         when(itemRepository.searchItems(eq(searchQuery), eq(sort), eq(size), eq(offset)))
                 .thenReturn(Flux.fromIterable(items));
         when(itemRepository.countBySearch(eq(searchQuery))).thenReturn(Mono.just(1L));
-
         StepVerifier.create(itemService.getItems(searchQuery, sort, page, size))
                 .expectNextMatches(result -> {
                     Page<Item> pageResult = result;
@@ -95,11 +90,9 @@ class ItemServiceTest {
     void getItemsWithEmptySearchShouldFallbackToFindAll() {
         Item item = createTestItem(1L, "Test Item", 1000L);
         List<Item> items = List.of(item);
-
         when(itemRepository.findAllWithSort(eq("NO"), eq(5), eq(0L)))
                 .thenReturn(Flux.fromIterable(items));
         when(itemRepository.count()).thenReturn(Mono.just(1L));
-
         StepVerifier.create(itemService.getItems("   ", "NO", 0, 5))
                 .expectNextMatches(page -> page.getContent().size() == 1 && page.getTotalElements() == 1L)
                 .verifyComplete();
@@ -107,15 +100,13 @@ class ItemServiceTest {
 
     @Test
     void getItemsWithPaginationShouldReturnCorrectPage() {
-        long offset = 1L * 5; // page=1, size=5 -> offset=5
+        long offset = 1L * 5;
 
         Item item = createTestItem(6L, "Page 2 Item", 1000L);
         List<Item> items = List.of(item);
-
         when(itemRepository.findAllWithSort(eq("NO"), eq(5), eq(offset)))
                 .thenReturn(Flux.fromIterable(items));
         when(itemRepository.count()).thenReturn(Mono.just(6L));
-
         StepVerifier.create(itemService.getItems(null, "NO", 1, 5))
                 .expectNextMatches(page ->
                         page.getContent().size() == 1

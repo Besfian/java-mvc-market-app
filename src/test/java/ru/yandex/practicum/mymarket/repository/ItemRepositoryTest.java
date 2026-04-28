@@ -29,9 +29,7 @@ class ItemRepositoryTest {
     void findAllShouldReturnAllItems() {
         Item item1 = createTestItem(1L, "Товар 1", 1000L);
         Item item2 = createTestItem(2L, "Товар 2", 2000L);
-
         Flux<Item> savedItems = itemRepository.saveAll(Flux.just(item1, item2));
-
         StepVerifier.create(savedItems.collectList())
                 .expectNextMatches(list -> list.size() == 2)
                 .verifyComplete();
@@ -45,10 +43,6 @@ class ItemRepositoryTest {
                 .expectNextMatches(found -> found.getTitle().equals("Тестовый товар"))
                 .verifyComplete();
     }
-
-
-
-
 
     private Item createTestItem() {
         return createTestItem(1L, "Тестовый товар", 1000L);
