@@ -16,9 +16,11 @@ public class CartItemEnricher {
     private static final String CART_ATTRIBUTE = "cart";
 
     private final ItemService itemService;
+    private final ItemCacheService itemCacheService;
 
-    public CartItemEnricher(ItemService itemService) {
+    public CartItemEnricher(ItemService itemService, ItemCacheService itemCacheService) {
         this.itemService = itemService;
+        this.itemCacheService = itemCacheService;
     }
 
     public Flux<Item> getCartItems(WebSession session) {
@@ -26,12 +28,15 @@ public class CartItemEnricher {
         log.debug("Getting all cart items, cart size: {} in session {}", cart.size(), session.getId());
         return Flux.fromIterable(cart.entrySet())
                 .doOnNext(entry -> log.debug("Processing cart entry: itemId={}, count={}", entry.getKey(), entry.getValue()))
-                .flatMap(entry -> itemService.getItemById(entry.getKey())
-                        .doOnNext(item -> log.debug("Found item: {}", item.getTitle()))
-                        .map(item -> {
-                            item.setCount(entry.getValue());
-                            return item;
-                        }));
+                .flatMap(entry -> {
+                    return itemCacheService.getItem(entry.getKey())
+                            .switchIfEmpty(itemService.getItemById(entry.getKey()))
+                            .doOnNext(item -> log.debug("Found item: {}", item.getTitle()))
+                            .map(item -> {
+                                item.setCount(entry.getValue());
+                                return item;
+                            });
+                });
     }
 
     public Mono<Long> getTotalSum(WebSession session) {
