@@ -32,7 +32,6 @@ java -jar target/my-market-app-1.0.0.jar
 
 # Запустить  приложение
 ./mvnw spring-boot:run
-
 ./mvnw clean spring-boot:run
 
 
@@ -40,3 +39,11 @@ java -jar target/my-market-app-1.0.0.jar
 docker build -t my-market-app .
 # Запустите контейнер
 docker run -p 8080:8080 my-market-app
+
+cd shop-app
+chmod +x mvnw
+./mvnw spring-boot:run
+
+cd payment-service
+chmod +x mvnw
+./mvnw spring-boot:run
