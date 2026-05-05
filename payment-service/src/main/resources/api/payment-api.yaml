@@ -1,0 +1,133 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  description: API для сервиса платежей интернет-магазина
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8081
+    description: Payment Service
+
+paths:
+  /api/v1/balance:
+    get:
+      operationId: getBalance
+      summary: Получить текущий баланс
+      tags:
+        - balance
+      responses:
+        '200':
+          description: Текущий баланс
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/payment:
+    post:
+      operationId: processPayment
+      summary: Осуществить платёж
+      tags:
+        - payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        '200':
+          description: Платёж успешно выполнен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Недостаточно средств
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    BalanceResponse:
+      type: object
+      required:
+        - balance
+      properties:
+        balance:
+          type: integer
+          format: int64
+          description: Текущий баланс в копейках
+          example: 100000
+
+    PaymentRequest:
+      type: object
+      required:
+        - orderId
+        - amount
+      properties:
+        orderId:
+          type: integer
+          format: int64
+          description: ID заказа
+          example: 1
+        amount:
+          type: integer
+          format: int64
+          description: Сумма платежа в копейках
+          example: 5000
+
+    PaymentResponse:
+      type: object
+      required:
+        - success
+        - orderId
+        - newBalance
+      properties:
+        success:
+          type: boolean
+          description: Статус платежа
+          example: true
+        orderId:
+          type: integer
+          format: int64
+          description: ID заказа
+          example: 1
+        message:
+          type: string
+          description: Сообщение о результате
+          example: "Платёж успешно выполнен"
+        newBalance:
+          type: integer
+          format: int64
+          description: Новый баланс после платежа
+          example: 95000
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Тип ошибки
+          example: "INSUFFICIENT_FUNDS"
+        message:
+          type: string
+          description: Описание ошибки
+          example: "Недостаточно средств на счете"
